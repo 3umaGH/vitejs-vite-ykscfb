@@ -4,6 +4,8 @@ import LandingPage from './landing-page/LandingPage.tsx'
 function App() {
   return (
     <>
+
+    
       <LandingPage />
       <CookieConsentBanner />
     </>
