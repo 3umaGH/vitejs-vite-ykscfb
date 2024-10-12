@@ -1,21 +1,15 @@
-import {
-  features,
-  navigation,
-  faqs,
-  footerNavigation,
-  testimonials
-} from './contentSections';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import Clients from './components/Clients';
-import Features from './components/Features';
-import Testimonials from './components/Testimonials';
-import FAQ from './components/FAQ';
-import Footer from './components/Footer';
+import Clients from './components/Clients'
+import FAQ from './components/FAQ'
+import Features from './components/Features'
+import Footer from './components/Footer'
+import Header from './components/Header'
+import Hero from './components/Hero'
+import Testimonials from './components/Testimonials'
+import { faqs, features, footerNavigation, navigation, testimonials } from './contentSections'
 
 export default function LandingPage() {
   return (
-    <div className='bg-white dark:text-white dark:bg-boxdark-2'>
+    <div className='overflow-hidden bg-white dark:text-white dark:bg-boxdark-2'>
       <Header navigation={navigation} />
 
       <main className='isolate dark:bg-boxdark-2'>
@@ -28,5 +22,5 @@ export default function LandingPage() {
 
       <Footer footerNavigation={footerNavigation} />
     </div>
-  );
+  )
 }
