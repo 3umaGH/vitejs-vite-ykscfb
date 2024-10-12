@@ -69,10 +69,12 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag)
     }
 
+    tag.onerror = () => console.error('Failed to load YouTube Iframe API')
+
     window.onYouTubeIframeAPIReady = () => {
       const newPlayer = new window.YT.Player('player', {
         width: '100%',
-        videoId: 'mUPlzggNRoE',
+        videoId: '5nbSPCm8lDA',
         playerVars: {
           autoplay: 0,
           controls: 0,
@@ -86,6 +88,9 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
         events: {
           onReady: () => {
             setPlayer(newPlayer)
+          },
+          onError: () => {
+            alert('Failed to load video.')
           },
           onStateChange: (a: { data: number }) => {
             const status = a.data as VideoStatus
@@ -209,7 +214,7 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
       {/* YouTube iframe container */}
 
       <div className='absolute top-0 overflow-hidden opacity-0'>
-        <div id='player' className='w-1 h-1 overflow-hidden rounded-xl ' />
+        <div id='player' className='w-1 h-1 overflow-hidden rounded-xl' />
       </div>
 
       <div className='flex flex-col items-center w-full h-full overflow-hidden md:flex-row justify-evenly'>
