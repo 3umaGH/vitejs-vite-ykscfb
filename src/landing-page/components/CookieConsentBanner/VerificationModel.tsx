@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useRef, useState } from 'react'
-import kebab from '../../../assets/kebab.png'
-import skibidi from '../../../assets/skibidi.png'
+import gangnam from '../../../assets/gangnam.png'
+import gangnam2 from '../../../assets/gangnam2.png'
 import { cn } from '../../cn'
 
 declare global {
@@ -21,7 +21,7 @@ enum VideoStatus {
 }
 
 const COUNTDOWN_SECONDS = 4
-const MISSED_BEATS_FAIL_THRESHOLD = 20
+const MISSED_BEATS_FAIL_THRESHOLD = 20000
 
 export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
@@ -32,10 +32,12 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   const [userBPM, setUserBPM] = useState<number | null>(null)
   const [userFails, setUserFails] = useState<number>(0)
   const [beat, setBeat] = useState(false)
-  const [beatImage, setBeatImage] = useState(skibidi)
+  const [beatImage, setBeatImage] = useState(gangnam)
   const [videoStatus, setVideoStatus] = useState<VideoStatus>(VideoStatus.UNSTARTED)
   const beatIntervalRef = useRef<null | number>(null)
+
   const isGameStarted = countdown === 0
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
 
   useEffect(() => {
     const lastTimestamp = timestamps[timestamps.length - 1]
@@ -74,7 +76,7 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
     window.onYouTubeIframeAPIReady = () => {
       const newPlayer = new window.YT.Player('player', {
         width: '100%',
-        videoId: '5nbSPCm8lDA',
+        videoId: '9bZkp7q19f0',
         playerVars: {
           autoplay: 0,
           controls: 0,
@@ -83,14 +85,17 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
           rel: 0,
           showinfo: 0,
           mute: 0,
-          start: 60, //60
+          start: 152,
+        },
+        iframeAttributes: {
+          referrerPolicy: 'origin',
         },
         events: {
           onReady: () => {
             setPlayer(newPlayer)
           },
-          onError: () => {
-            alert('Failed to load video.')
+          onError: (a: { data: number }) => {
+            alert('Failed to load video.' + a.data)
           },
           onStateChange: (a: { data: number }) => {
             const status = a.data as VideoStatus
@@ -145,14 +150,14 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
       return
     }
 
-    if (currentTime >= 102) {
-      handleSetTargetBPM(128)
-      setBeatImage(kebab)
-    } else {
-      handleSetTargetBPM(113)
-      setBeatImage(skibidi)
+    if (currentTime >= 200) {
+      setBeatImage(gangnam2)
     }
-  }, [currentTime, handleSetTargetBPM, isGameStarted, player])
+
+    if (currentTime >= 218) {
+      onSuccess()
+    }
+  }, [currentTime, handleSetTargetBPM, isGameStarted, onSuccess, player])
 
   // Update current video time
   useEffect(() => {
@@ -188,6 +193,12 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   }
 
   const handleStartGame = () => {
+    handleSetTargetBPM(132)
+    if (isIOS) {
+      if (player) player.playVideo()
+      setCountdown(0)
+      return
+    }
     const interval = setInterval(() => {
       setCountdown(p => {
         if (p <= 1) {
