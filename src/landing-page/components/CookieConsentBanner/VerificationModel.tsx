@@ -152,6 +152,10 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
       return
     }
 
+    if (isGameStarted) {
+      if (player) player.playVideo()
+    }
+
     if (currentTime >= 200) {
       setBeatImage(gangnam2)
     }
