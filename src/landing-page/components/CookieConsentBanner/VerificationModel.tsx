@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import kebab from '../../../assets/kebab.png'
 import skibidi from '../../../assets/skibidi.png'
 import { cn } from '../../cn'
@@ -11,7 +11,20 @@ declare global {
   }
 }
 
-export const VerificationModel = () => {
+enum VideoStatus {
+  UNSTARTED = -1,
+  ENDED = 0,
+  PLAYING = 1,
+  PAUSED = 2,
+  BUFFERING = 3,
+  CUED = 5,
+}
+
+const COUNTDOWN_SECONDS = 4
+const MISSED_BEATS_FAIL_THRESHOLD = 20
+
+export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
   const [player, setPlayer] = useState<any>(null) // YT.Player type can be complex, so using any for simplicity
   const [currentTime, setCurrentTime] = useState<number>(0)
   const [targetBPM, setTargetBPM] = useState<number>(0)
@@ -20,8 +33,9 @@ export const VerificationModel = () => {
   const [userFails, setUserFails] = useState<number>(0)
   const [beat, setBeat] = useState(false)
   const [beatImage, setBeatImage] = useState(skibidi)
-  const [isPlaying, setPlaying] = useState(false)
+  const [videoStatus, setVideoStatus] = useState<VideoStatus>(VideoStatus.UNSTARTED)
   const beatIntervalRef = useRef<null | number>(null)
+  const isGameStarted = countdown === 0
 
   useEffect(() => {
     const lastTimestamp = timestamps[timestamps.length - 1]
@@ -33,11 +47,11 @@ export const VerificationModel = () => {
   }, [timestamps, beat])
 
   useEffect(() => {
-    if (isPlaying && beat && Math.abs((userBPM ?? 0) - targetBPM) > 3) {
+    if (videoStatus === VideoStatus.PLAYING && beat && Math.abs((userBPM ?? 0) - targetBPM) > 3) {
       setUserFails(p => {
         const newFails = p + 1
 
-        if (newFails > 10) {
+        if (newFails > MISSED_BEATS_FAIL_THRESHOLD) {
           alert('Verification failed. Please try again.')
           location.reload()
         }
@@ -45,10 +59,9 @@ export const VerificationModel = () => {
         return newFails
       })
     }
-  }, [beat, isPlaying, targetBPM, userBPM])
+  }, [beat, player, targetBPM, userBPM, videoStatus])
 
-  console.log(userFails)
-  useEffect(() => {
+  const initalizeVideo = useCallback(() => {
     const tag = document.createElement('script')
     tag.src = 'https://www.youtube.com/iframe_api'
     const firstScriptTag = document.getElementsByTagName('script')[0]
@@ -61,7 +74,7 @@ export const VerificationModel = () => {
         width: '100%',
         videoId: 'mUPlzggNRoE',
         playerVars: {
-          autoplay: 1,
+          autoplay: 0,
           controls: 0,
           disablekb: 1,
           modestbranding: 1,
@@ -75,21 +88,21 @@ export const VerificationModel = () => {
             setPlayer(newPlayer)
           },
           onStateChange: (a: { data: number }) => {
-            if (a.data === 1) setPlaying(true)
-            else setPlaying(false)
+            const status = a.data as VideoStatus
+            setVideoStatus(status)
+
+            if (status === VideoStatus.ENDED) {
+              onSuccess()
+            }
           },
         },
       })
     }
+  }, [onSuccess])
 
+  useEffect(() => {
+    initalizeVideo()
     document.body.classList.add('overflow-hidden')
-
-    const checkPlay = () => {
-      player.playVideo()
-      requestAnimationFrame(checkPlay)
-    }
-
-    requestAnimationFrame(checkPlay)
     addEventListener('keydown', handleKeyPress)
 
     return () => {
@@ -97,7 +110,7 @@ export const VerificationModel = () => {
       removeEventListener('keydown', handleKeyPress)
       document.body.classList.remove('overflow-hidden')
     }
-  }, [player])
+  }, [initalizeVideo])
 
   const handleSetTargetBPM = useCallback((bpm: number) => {
     setTargetBPM(prev => {
@@ -123,7 +136,7 @@ export const VerificationModel = () => {
 
   // Update target bpm
   useEffect(() => {
-    if (!player) {
+    if (!player || !isGameStarted) {
       return
     }
 
@@ -134,7 +147,7 @@ export const VerificationModel = () => {
       handleSetTargetBPM(113)
       setBeatImage(skibidi)
     }
-  }, [currentTime, handleSetTargetBPM, player])
+  }, [currentTime, handleSetTargetBPM, isGameStarted, player])
 
   // Update current video time
   useEffect(() => {
@@ -142,13 +155,9 @@ export const VerificationModel = () => {
       setInterval(() => {
         const time = player.getCurrentTime()
         setCurrentTime(time.toFixed(2))
-      }, 50)
+      }, 250)
     }
   }, [player])
-
-  const handlePlayerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation()
-  }
 
   const handleKeyPress = (e: KeyboardEvent | null) => {
     const now = Date.now()
@@ -173,6 +182,19 @@ export const VerificationModel = () => {
     })
   }
 
+  const handleStartGame = () => {
+    const interval = setInterval(() => {
+      setCountdown(p => {
+        if (p <= 1) {
+          if (player) player.playVideo()
+          clearInterval(interval)
+        }
+
+        return p - 1
+      })
+    }, 1000)
+  }
+
   const getBPMColor = () => {
     const diff = Math.abs((userBPM ?? 0) - targetBPM)
 
@@ -190,21 +212,8 @@ export const VerificationModel = () => {
         <div id='player' className='w-1 h-1 overflow-hidden rounded-xl ' />
       </div>
 
-      {/*}  <div
-          onClick={handlePlayerClick}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '0%',
-            height: '0%',
-            background: 'transparent',
-            zIndex: 1,
-          }}
-        />*/}
-
       <div className='flex flex-col items-center w-full h-full overflow-hidden md:flex-row justify-evenly'>
-        {isPlaying && (
+        {videoStatus === VideoStatus.PLAYING && (
           <img
             src={beatImage}
             className={cn('xl:max-w-50 max-w-24 h-auto transition-all', {
@@ -214,19 +223,51 @@ export const VerificationModel = () => {
           />
         )}
 
-        <div className='flex flex-col gap-4 text-xl font-semibold text-center text-white'>
-          <p className='text-3xl font-bold'>Please verify that you are a human.</p>
-          <p> Match the songs BPM</p>
-          <p
-            className='p-4 transition-all duration-75 bg-green-500 cursor-pointer select-none rounded-xl active:scale-95'
-            onClick={() => handleKeyPress(null)}>
-            Press <span>Spacebar</span> or this button.
-          </p>
-          <span>Missed beats: {userFails}</span>
-          <span className={getBPMColor()}>Your BPM: {userBPM ?? 0}</span>
+        <div className='flex flex-col gap-4 text-base font-semibold text-center text-white md:text-lg'>
+          <p className='text-xl font-bold md:text-3xl '>Please verify that you are a human.</p>
+          <p> Match the songs rythm!</p>
+
+          {isGameStarted ? (
+            <>
+              {videoStatus !== VideoStatus.ENDED && (
+                <button
+                  className='p-4 m-4 transition-all duration-75 bg-green-500 cursor-pointer select-none rounded-xl active:scale-95 disabled:opacity-50'
+                  onClick={() => handleKeyPress(null)}
+                  disabled={videoStatus !== VideoStatus.PLAYING}>
+                  {videoStatus === VideoStatus.PLAYING
+                    ? 'Press spacebar or this button.'
+                    : videoStatus === VideoStatus.BUFFERING
+                    ? 'Buffering...'
+                    : 'Loading...'}
+                </button>
+              )}
+              <div className='flex items-center gap-2 text-sm md:text-base'>
+                Human
+                <div className='w-full h-4 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700'>
+                  <div
+                    className='h-4 transition-all duration-1000 bg-orange-600 rounded-full'
+                    style={{ width: `${(100 / MISSED_BEATS_FAIL_THRESHOLD) * userFails}%` }}></div>
+                </div>
+                Robot
+              </div>
+              <span className={cn(getBPMColor(), 'text-xl font-bold')}>Your BPM: {userBPM ?? 0}</span>
+            </>
+          ) : (
+            <div>
+              {countdown === COUNTDOWN_SECONDS ? (
+                <p
+                  className='p-4 transition-all duration-75 bg-orange-500 cursor-pointer select-none rounded-xl active:scale-95'
+                  onClick={() => handleStartGame()}>
+                  Press to start verification
+                </p>
+              ) : (
+                <p className='text-2xl'>Starting in {countdown}...</p>
+              )}
+            </div>
+          )}
         </div>
 
-        {isPlaying && (
+        {videoStatus === VideoStatus.PLAYING && (
           <img
             src={beatImage}
             className={cn('xl:max-w-50 max-w-24 h-auto transition-all', {
