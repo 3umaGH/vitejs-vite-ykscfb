@@ -21,7 +21,7 @@ enum VideoStatus {
 }
 
 const COUNTDOWN_SECONDS = 4
-const MISSED_BEATS_FAIL_THRESHOLD = 20000
+const MISSED_BEATS_FAIL_THRESHOLD = 15
 
 export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
@@ -113,12 +113,14 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   useEffect(() => {
     initalizeVideo()
     document.body.classList.add('overflow-hidden')
+    document.body.classList.add('select-none')
     addEventListener('keydown', handleKeyPress)
 
     return () => {
       window.onYouTubeIframeAPIReady = undefined
       removeEventListener('keydown', handleKeyPress)
       document.body.classList.remove('overflow-hidden')
+      document.body.classList.remove('select-none')
     }
   }, [initalizeVideo])
 
@@ -221,7 +223,7 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
   }
 
   return (
-    <div className='fixed z-[100] flex flex-col gap-8 top-0 w-[100svw] h-[100svh] p-8 bg-[rgba(0,0,0,0.8)] overflow-hidden'>
+    <div className='select-none fixed z-[100] flex flex-col gap-8 top-0 w-[100svw] h-[100svh] p-8 bg-[rgba(0,0,0,0.8)] overflow-hidden'>
       {/* YouTube iframe container */}
 
       <div className='absolute top-0 overflow-hidden opacity-0'>
@@ -261,7 +263,7 @@ export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
                 Human
                 <div className='w-full h-4 overflow-hidden bg-gray-200 rounded-full dark:bg-gray-700'>
                   <div
-                    className='h-4 transition-all duration-1000 bg-orange-600 rounded-full'
+                    className='h-4 transition-all duration-200 bg-orange-600 rounded-full'
                     style={{ width: `${(100 / MISSED_BEATS_FAIL_THRESHOLD) * userFails}%` }}></div>
                 </div>
                 Robot
