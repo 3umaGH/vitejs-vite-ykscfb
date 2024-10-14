@@ -1,14 +1,34 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { VerificationModel } from './VerificationModel'
 
 const CookieConsentBanner = () => {
-  const [isVisible,setVisible] = useState(true)
+  const [isVisible, setVisible] = useState(true)
   const [verifModalVisible, setVerifModalVisible] = useState(false)
+
+  useEffect(() => {
+    const verified = localStorage.getItem('verified')
+
+    if (verified === null) {
+      return
+    }
+
+    if (verified === 'true') {
+      return
+    }
+
+    setVerifModalVisible(true)
+  }, [])
 
   const handleSuccessVerification = () => {
     setVerifModalVisible(false)
     setVisible(false)
     alert('Verification success!')
+    localStorage.setItem('verified', 'true')
+  }
+
+  const handleStartVerification = () => {
+    setVerifModalVisible(true)
+    localStorage.setItem('verified', 'false')
   }
 
   return (
@@ -20,7 +40,7 @@ const CookieConsentBanner = () => {
           <p className='font-bold'>This website uses cookies</p>
           <p>We use cookies to ensure you get the best experience on our website.</p>
         </div>
-        <button onClick={() => setVerifModalVisible(true)} className='px-4 py-2 text-blue-500 bg-white rounded'>
+        <button onClick={handleStartVerification} className='px-4 py-2 text-blue-500 bg-white rounded'>
           Accept
         </button>
       </div>
