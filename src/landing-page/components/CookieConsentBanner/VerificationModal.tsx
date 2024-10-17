@@ -23,7 +23,7 @@ enum VideoStatus {
 const COUNTDOWN_SECONDS = 4
 const MISSED_BEATS_FAIL_THRESHOLD = 15
 
-export const VerificationModel = ({ onSuccess }: { onSuccess: () => void }) => {
+export const VerificationModal = ({ onSuccess }: { onSuccess: () => void }) => {
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
   const [player, setPlayer] = useState<any>(null) // YT.Player type can be complex, so using any for simplicity
   const [currentTime, setCurrentTime] = useState<number>(0)

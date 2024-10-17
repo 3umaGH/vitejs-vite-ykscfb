@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { VerificationModel } from './VerificationModel'
+import { VerificationModal } from './VerificationModal'
 
 const CookieConsentBanner = () => {
   const [isVisible, setVisible] = useState(true)
@@ -33,7 +33,7 @@ const CookieConsentBanner = () => {
 
   return (
     <div style={{ position: 'absolute', display: isVisible ? 'block' : 'none' }}>
-      {verifModalVisible && <VerificationModel onSuccess={handleSuccessVerification} />}
+      {verifModalVisible && <VerificationModal onSuccess={handleSuccessVerification} />}
 
       <div className={'fixed bottom-0 left-0 w-full bg-blue-500 text-white p-4 flex justify-between items-center '}>
         <div>
